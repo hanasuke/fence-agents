@@ -112,6 +112,19 @@ def set_power_status(conn, options):
         logging.info("Called reboot hard API call for " + server.id)
 
 
+def reboot_cycle(conn, options):
+    logging.info("Ruinning HARD reboot action in reboot_cycle on %s", options["--plug"])
+    try:
+        server = conn.servers.get(options["--plug"])
+        server.reboot("HARD")
+    except NotFound as e:
+        fail_usage("Failed: Not Found: {}".format(options["--plug"]))
+    except Conflict as e:
+        fail_usage("Failed: API is already called. {}".format(e))
+
+    logging.info("Called reboot hard API call for {}".format(server.id))
+
+
 def nova_login(username, password, projectname, auth_url, user_domain_name,
                project_domain_name, ssl_insecure, cacert, apitimeout):
     legacy_import = False
@@ -273,6 +286,7 @@ def main():
         "ssl_insecure",
         "cacert",
         "apitimeout",
+        "method",
     ]
 
     atexit.register(atexit_handler)
@@ -373,7 +387,7 @@ This agent calls the python-novaclient and it is mandatory to be installed "
         fail_usage("Failed: Unable to connect to Nova: " + str(e))
 
     # Operate the fencing device
-    result = fence_action(conn, options, set_power_status, get_power_status, get_nodes_list)
+    result = fence_action(conn, options, set_power_status, get_power_status, get_nodes_list, reboot_cycle)
     sys.exit(result)
 
 
